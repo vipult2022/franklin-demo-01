@@ -1,8 +1,11 @@
 import { createOptimizedPicture } from '../../scripts/lib-franklin.js';
+import { fetchPlaceholders, getMetadata } from '../../scripts/lib-franklin.js'
 
-export default function decorate(block) {
+export default async function decorate(block) {
   /* change to ul, li */
   const ul = document.createElement('ul');
+  const placeholders = await fetchPlaceholders('');
+  console.log({placeholders});
   [...block.children].forEach((row) => {
     const li = document.createElement('li');
     li.innerHTML = row.innerHTML;
@@ -16,3 +19,4 @@ export default function decorate(block) {
   block.textContent = '';
   block.append(ul);
 }
+
