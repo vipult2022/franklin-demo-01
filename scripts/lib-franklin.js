@@ -244,6 +244,7 @@ export function readBlockConfig(block) {
  * @param {Element} $main The container element
  */
 export function decorateSections(main) {
+  console.log({main, selcted: main.querySelectorAll(':scope > div')})
   main.querySelectorAll(':scope > div').forEach((section) => {
     const wrappers = [];
     let defaultContent = false;

@@ -15,22 +15,12 @@
  * @param {string} prefix
  */
 export async function fetchData(fileName = 'default', objParam) {
-    const response = {}
-    const param = '?' + new URLSearchParams(param).toString();
-      const res = new Promise((resolve, reject) => {
-        try {
-          fetch(`${fileName}/.json${param}`)
-            .then((resp) => resp.json())
-            .then((json) => {
-                response = {...json}
-              resolve();
-            });
-        } catch (error) {
-          // error loading placeholders
-          console.error({error})
-          reject();
-        }
-      });
-
-    return response
+  const param = '?' + new URLSearchParams(objParam).toString();
+  try {
+    const response = await fetch(`/json/${fileName}.json${param}`)
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error({ error })
   }
+}
