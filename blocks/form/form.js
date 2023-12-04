@@ -1,192 +1,138 @@
-function createSelect(fd) {
-  const select = document.createElement('select');
-  select.id = fd.Field;
-  if (fd.Placeholder) {
-    const ph = document.createElement('option');
-    ph.textContent = fd.Placeholder;
-    ph.setAttribute('selected', '');
-    ph.setAttribute('disabled', '');
-    select.append(ph);
-  }
-  fd.Options.split(',').forEach((o) => {
-    const option = document.createElement('option');
-    option.textContent = o.trim();
-    option.value = o.trim();
-    select.append(option);
-  });
-  if (fd.Mandatory === 'x') {
-    select.setAttribute('required', 'required');
-  }
-  return select;
-}
+const onChangeListener = (event) => {
+	event.target.classList.remove("error");
+};
 
-function constructPayload(form) {
-  const payload = {};
-  [...form.elements].forEach((fe) => {
-    if (fe.type === 'checkbox') {
-      if (fe.checked) payload[fe.id] = fe.value;
-    } else if (fe.id) {
-      payload[fe.id] = fe.value;
-    }
-  });
-  return payload;
-}
+const createFormElement = (row) => {
+	if (!row?.children || ![...row.children].length) {
+		return null;
+	}
+	const [typeEl, idEl, placeholderEl] = [...row.children];
+	const id = idEl.textContent;
+	const type = typeEl.textContent;
+	const placeholder = placeholderEl.innerHTML;
+	switch (type) {
+		case "text":
+		case "email":
+			const text = document.createElement("input");
+			text.id = id;
+			text.type = type;
+			text.placeholder = placeholder;
+			text.addEventListener("change", onChangeListener);
+			return text;
+		case "textarea":
+			const textarea = document.createElement("textarea");
+			textarea.id = id;
+			textarea.placeholder = placeholder;
+			textarea.addEventListener("change", onChangeListener);
+			return textarea;
+		case "dropdown":
+			const dropdown = document.createElement("select");
+			placeholder.split(",").forEach((label, index) => {
+				const option = document.createElement("option");
+				option.value = label;
+				option.innerHTML = label;
+				if (index === 0) {
+					option.value = "";
+				}
+				dropdown.appendChild(option);
+			});
+			dropdown.id = id;
+			dropdown.addEventListener("change", onChangeListener);
+			return dropdown;
+		case "checkbox":
+			const span = document.createElement("span");
+			const label = document.createElement("label");
+			const checkbox = document.createElement("input");
+			label.htmlFor = id;
+			span.innerHTML = placeholder;
+			checkbox.id = id;
+			checkbox.checked = false;
+			checkbox.type = "checkbox";
+			label.appendChild(checkbox);
+			label.appendChild(span);
+			return label;
+		case "dropdown":
+			return null;
+		default:
+			return null;
+	}
+};
 
-async function submitForm(form) {
-  const payload = constructPayload(form);
-  const resp = await fetch(form.dataset.action, {
-    method: 'POST',
-    cache: 'no-cache',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ data: payload }),
-  });
-  await resp.text();
-  return payload;
-}
-
-function createButton(fd) {
-  const button = document.createElement('button');
-  button.textContent = fd.Label;
-  button.classList.add('button');
-  if (fd.Type === 'submit') {
-    button.addEventListener('click', async (event) => {
-      const form = button.closest('form');
-      if (fd.Placeholder) form.dataset.action = fd.Placeholder;
-      if (form.checkValidity()) {
-        event.preventDefault();
-        button.setAttribute('disabled', '');
-        await submitForm(form);
-        const redirectTo = fd.Extra;
-        window.location.href = redirectTo;
-      }
-    });
-  }
-  return button;
-}
-
-function createHeading(fd) {
-  const heading = document.createElement('h3');
-  heading.textContent = fd.Label;
-  return heading;
-}
-
-function createInput(fd) {
-  const input = document.createElement('input');
-  input.type = fd.Type;
-  input.id = fd.Field;
-  input.setAttribute('placeholder', fd.Placeholder);
-  if (fd.Mandatory === 'x') {
-    input.setAttribute('required', 'required');
-  }
-  return input;
-}
-
-function createTextArea(fd) {
-  const input = document.createElement('textarea');
-  input.id = fd.Field;
-  input.setAttribute('placeholder', fd.Placeholder);
-  if (fd.Mandatory === 'x') {
-    input.setAttribute('required', 'required');
-  }
-  return input;
-}
-
-function createLabel(fd) {
-  const label = document.createElement('label');
-  label.setAttribute('for', fd.Field);
-  label.textContent = fd.Label;
-  if (fd.Mandatory === 'x') {
-    label.classList.add('required');
-  }
-  return label;
-}
-
-function applyRules(form, rules) {
-  const payload = constructPayload(form);
-  rules.forEach((field) => {
-    const { type, condition: { key, operator, value } } = field.rule;
-    if (type === 'visible') {
-      if (operator === 'eq') {
-        if (payload[key] === value) {
-          form.querySelector(`.${field.fieldId}`).classList.remove('hidden');
-        } else {
-          form.querySelector(`.${field.fieldId}`).classList.add('hidden');
-        }
-      }
-    }
-  });
-}
-
-function fill(form) {
-  const { action } = form.dataset;
-  if (action === '/tools/bot/register-form') {
-    const loc = new URL(window.location.href);
-    form.querySelector('#owner').value = loc.searchParams.get('owner') || '';
-    form.querySelector('#installationId').value = loc.searchParams.get('id') || '';
-  }
-}
-
-async function createForm(formURL) {
-  const { pathname } = new URL(formURL);
-  const resp = await fetch(pathname);
-  const json = await resp.json();
-  const form = document.createElement('form');
-  const rules = [];
-  // eslint-disable-next-line prefer-destructuring
-  form.dataset.action = pathname.split('.json')[0];
-  json.data.forEach((fd) => {
-    fd.Type = fd.Type || 'text';
-    const fieldWrapper = document.createElement('div');
-    const style = fd.Style ? ` form-${fd.Style}` : '';
-    const fieldId = `form-${fd.Type}-wrapper${style}`;
-    fieldWrapper.className = fieldId;
-    fieldWrapper.classList.add('field-wrapper');
-    switch (fd.Type) {
-      case 'select':
-        fieldWrapper.append(createLabel(fd));
-        fieldWrapper.append(createSelect(fd));
-        break;
-      case 'heading':
-        fieldWrapper.append(createHeading(fd));
-        break;
-      case 'checkbox':
-        fieldWrapper.append(createInput(fd));
-        fieldWrapper.append(createLabel(fd));
-        break;
-      case 'text-area':
-        fieldWrapper.append(createLabel(fd));
-        fieldWrapper.append(createTextArea(fd));
-        break;
-      case 'submit':
-        fieldWrapper.append(createButton(fd));
-        break;
-      default:
-        fieldWrapper.append(createLabel(fd));
-        fieldWrapper.append(createInput(fd));
-    }
-
-    if (fd.Rules) {
-      try {
-        rules.push({ fieldId, rule: JSON.parse(fd.Rules) });
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn(`Invalid Rule ${fd.Rules}: ${e}`);
-      }
-    }
-    form.append(fieldWrapper);
-  });
-
-  form.addEventListener('change', () => applyRules(form, rules));
-  applyRules(form, rules);
-  fill(form);
-  return (form);
-}
+const onFormSubmit = (event) => {
+	event.preventDefault();
+	let error = false;
+	const name = event.target.querySelector("#name");
+	const email = event.target.querySelector("#email");
+	const interests = event.target.querySelector("#interests");
+	if (!name.value || !name.value.trim()) {
+		error = true;
+		name.className = "error";
+	}
+	if (!email.value || !email.value.trim()) {
+		error = true;
+		email.className = "error";
+	}
+	if (!interests.value || !interests.value.trim()) {
+		error = true;
+		interests.className = "error";
+	}
+	if (!error) {
+		const payload = {
+			data: {
+				name: name.value.trim(),
+				email: email.value.trim(),
+				interests: interests.value.trim(),
+			},
+		};
+		const loader = document.querySelector("#loader-wrapper");
+		loader?.classList.add("show");
+		fetch("/email-form", {
+			method: "POST",
+			body: JSON.stringify(payload),
+			headers: {
+				"Content-Type": "application/json",
+			},
+		})
+			.then((response) => {
+				if (
+					(response.status === 200 || response.status === 201) &&
+					response.ok
+				) {
+					name.value = "";
+					email.value = "";
+					interests.value = "";
+				}
+			})
+			.finally(() => {
+				loader?.classList.remove("show");
+			});
+	}
+};
 
 export default async function decorate(block) {
-  const form = block.querySelector('a[href$=".json"]');
-  if (form) {
-    form.replaceWith(await createForm(form.href));
-  }
+	const documentFragment = new DocumentFragment();
+	const loaderWrapper = document.createElement("div");
+	loaderWrapper.className = "loader-wrapper";
+	loaderWrapper.id = "loader-wrapper";
+	const loader = document.createElement("div");
+	loader.className = "loader";
+	loader.id = "loader";
+	loaderWrapper.appendChild(loader);
+	const form = document.createElement("form");
+	form.addEventListener("submit", onFormSubmit);
+	documentFragment.appendChild(form);
+	documentFragment.appendChild(loaderWrapper);
+	[...block.children].forEach((row) => {
+		const div = document.createElement("div");
+		div.className = "form-element";
+		const rowElement = createFormElement(row);
+		div.appendChild(rowElement);
+		form.appendChild(div);
+	});
+	const submitButton = document.createElement("button");
+	submitButton.type = "submit";
+	submitButton.innerHTML = "Submit";
+	form.appendChild(submitButton);
+	block.innerHTML = "";
+	block.appendChild(documentFragment);
 }
