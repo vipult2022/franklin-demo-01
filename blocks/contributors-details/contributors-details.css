@@ -1,0 +1,58 @@
+.contributors-details-wrapper .contributors-details {
+	display: flex;
+	justify-content: flex-start;
+}
+
+.contributors-details .contributor {
+	display: flex;
+	flex-basis: 25%;
+	flex-direction: column;
+	align-items: center;
+}
+
+.contributor .image img {
+	width: 164px;
+	height: 164px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.contributor .title h3 {
+	margin: 8px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.contributor .skills h5 {
+	margin: 8px;
+	font-size: 14px;
+	font-weight: 500;
+	text-transform: uppercase;
+}
+
+.section.contributors-details-container .default-content-wrapper > h1,
+.section.contributors-details-container .default-content-wrapper > h2 {
+	font-size: 40px;
+	margin-top: 27px;
+	font-weight: normal;
+	margin-bottom: 13.5px;
+}
+
+.section.contributors-details-container .default-content-wrapper > h2 {
+	font-size: 36px;
+}
+
+.section.contributors-details-container .default-content-wrapper > h2::after {
+	border-bottom: 2px solid var(--brandPrimary, #ffea00);
+	content: "";
+	display: block;
+	padding-top: 8px;
+	width: 84px;
+}
+
+.section.contributors-details-container .default-content-wrapper > p {
+	line-height: 2.5;
+	margin: 0 0 13.5px;
+	text-align: justify;
+	font-size: 14px;
+}
